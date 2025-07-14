@@ -22,8 +22,9 @@ class Program
         {
             args =
             [
-                "--url", "https://www.youtube.com/watch?v=5V249a2hPf8",
-                "--debug"
+                "--url", "https://www.youtube.com/watch?v=V7hnEfmBAA8",
+                "--detailed",
+                //"--debug"
             ];
         }
 
@@ -86,10 +87,16 @@ class Program
             Description = "디버그 모드를 활성화하여 상세한 로그를 출력합니다."
         };
 
+        var detailedOption = new Option<bool>("--detailed", "--상세히")
+        {
+            Description = "매우 상세하고 포괄적인 요약을 생성합니다. (기본보다 2-3배 긴 요약)"
+        };
+
         var rootCommand = new RootCommand("SumTube - YouTube 영상 AI 요약기");
         rootCommand.Options.Add(urlOption);
         rootCommand.Options.Add(modelOption);
         rootCommand.Options.Add(debugOption);
+        rootCommand.Options.Add(detailedOption);
 
         // Parse arguments manually for simplicity
         var parseResult = rootCommand.Parse(args);
@@ -105,6 +112,7 @@ class Program
 
         // Enable debug mode if specified
         var debugMode = parseResult.GetValue(debugOption);
+        var detailedMode = parseResult.GetValue(detailedOption);
         Logger.IsDebugMode = debugMode;
 
         if (debugMode)
@@ -114,26 +122,32 @@ class Program
             Logger.Debug("STARTUP", $"Arguments: {string.Join(" ", args)}");
         }
 
+        if (detailedMode)
+        {
+            Logger.Info("📝 상세 요약 모드가 활성화되었습니다. 매우 포괄적인 요약이 생성됩니다.");
+            Logger.Debug("STARTUP", "Detailed summary mode enabled");
+        }
+
         var url = parseResult.GetValue(urlOption);
         if (string.IsNullOrWhiteSpace(url))
         {
             Logger.Error("YouTube URL이 제공되지 않았습니다.");
-            Logger.Info("사용법: SumTube --url \"https://www.youtube.com/watch?v=VIDEO_ID\" [--model MODEL_NAME] [--debug]");
+            Logger.Info("사용법: SumTube --url \"https://www.youtube.com/watch?v=VIDEO_ID\" [--model MODEL_NAME] [--debug] [--detailed]");
             return 1;
         }
 
         var modelName = parseResult.GetValue(modelOption);
         
-        Logger.Debug("STARTUP", $"Parsed options - URL: {url}, Model: {modelName ?? "default"}, Debug: {debugMode}");
+        Logger.Debug("STARTUP", $"Parsed options - URL: {url}, Model: {modelName ?? "default"}, Debug: {debugMode}, Detailed: {detailedMode}");
         
-        await ProcessVideoAsync(url, modelName, cancellationToken);
+        await ProcessVideoAsync(url, modelName, detailedMode, cancellationToken);
         return 0;
     }
 
     /// <summary>
     /// Processes the YouTube video and generates summary
     /// </summary>
-    private static async Task ProcessVideoAsync(string youtubeUrl, string? modelName, CancellationToken cancellationToken)
+    private static async Task ProcessVideoAsync(string youtubeUrl, string? modelName, bool detailedMode, CancellationToken cancellationToken)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         
@@ -247,11 +261,14 @@ class Program
             // Step 7: Generate detailed Korean summary
             Logger.Debug("AI", "Starting AI summary generation");
             var summaryStopwatch = System.Diagnostics.Stopwatch.StartNew();
-            var summary = await _ollamaApiService.GenerateDetailedSummaryAsync(transcript, cancellationToken);
+            var summary = detailedMode 
+                ? await _ollamaApiService.GenerateUltraDetailedSummaryAsync(transcript, cancellationToken)
+                : await _ollamaApiService.GenerateDetailedSummaryAsync(transcript, cancellationToken);
             summaryStopwatch.Stop();
             
             Logger.Debug("AI", $"Summary generation completed in {summaryStopwatch.ElapsedMilliseconds}ms");
             Logger.Debug("AI", $"Summary length: {summary.Length} characters");
+            Logger.Debug("AI", $"Summary mode: {(detailedMode ? "Ultra-detailed" : "Standard detailed")}");
 
             // Step 8: Display results
             Logger.Info("\n" + summary);
@@ -262,7 +279,8 @@ class Program
                 ["TranscriptExtractionMs"] = transcriptStopwatch.ElapsedMilliseconds,
                 ["SummaryGenerationMs"] = summaryStopwatch.ElapsedMilliseconds,
                 ["TranscriptLength"] = transcript.Length,
-                ["SummaryLength"] = summary.Length
+                ["SummaryLength"] = summary.Length,
+                ["DetailedMode"] = detailedMode
             });
 
         }
@@ -301,6 +319,7 @@ class Program
 ║  • 명령줄 모델 선택 지원                                                       ║
 ║  • 고급 모델 검증 및 자동 복구                                                  ║
 ║  • 디버그 모드 지원                                                           ║
+║  • 📝 상세/초상세 요약 모드 지원                                               ║
 ║                                                                              ║
 ║  기본 모델: {config.Ollama.DefaultModel}                                      ║
 ║                                                                              ║
