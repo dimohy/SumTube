@@ -18,14 +18,14 @@ class Program
     static async Task<int> Main(string[] args)
     {
         // 테스트를 위한 기본 인자 설정
-        //if (args.Length is 0)
-        //{
-        //    args =
-        //    [
-        //        "--url", "https://www.youtube.com/watch?v=O8JW97kprjM",
-        //        "--debug"
-        //    ];
-        //}
+        if (args.Length is 0)
+        {
+            args =
+            [
+                "--url", "https://www.youtube.com/watch?v=5V249a2hPf8",
+                "--debug"
+            ];
+        }
 
         Console.OutputEncoding = System.Text.Encoding.UTF8;
         

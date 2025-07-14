@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using SumTube.Configuration;
 
 namespace SumTube.Services;
@@ -138,13 +139,22 @@ public class YouTubeService
                 if (vttFiles.Length > 0)
                 {
                     var subtitleContent = await File.ReadAllTextAsync(vttFiles[0], cancellationToken);
-                    var cleanContent = CleanVttContent(subtitleContent);
+                    var cleanContent = CleanVttContent(subtitleContent, lang);
                     
-                    if (!string.IsNullOrWhiteSpace(cleanContent))
+                    // Enhanced validation for meaningful content
+                    if (IsValidSubtitleContent(cleanContent, lang))
                     {
-                        Console.WriteLine($"✅ {lang} 언어 자막을 찾았습니다.");
+                        Console.WriteLine($"✅ {lang} 언어 자막을 찾았습니다. (유효한 내용: {cleanContent.Length} 문자)");
                         return cleanContent;
                     }
+                    else
+                    {
+                        Console.WriteLine($"⚠️ {lang} 언어 자막 파일이 있지만 유효한 내용이 부족합니다.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"❌ {lang} 언어 자막 파일이 생성되지 않았습니다.");
                 }
             }
 
@@ -167,12 +177,13 @@ public class YouTubeService
     /// <summary>
     /// Cleans VTT subtitle content to extract only text
     /// </summary>
-    private static string CleanVttContent(string vttContent)
+    private static string CleanVttContent(string vttContent, string language = "")
     {
         if (string.IsNullOrWhiteSpace(vttContent))
             return string.Empty;
 
-        var lines = vttContent.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        // Normalize line endings and split
+        var lines = Regex.Split(vttContent.Trim(), @"\r?\n|\r", RegexOptions.None);
         var textLines = new List<string>();
 
         foreach (var line in lines)
@@ -182,24 +193,178 @@ public class YouTubeService
             // Skip VTT headers and timing lines
             if (trimmedLine.StartsWith("WEBVTT") ||
                 trimmedLine.StartsWith("NOTE") ||
+                trimmedLine.StartsWith("Kind:") ||
+                trimmedLine.StartsWith("Language:") ||
                 trimmedLine.Contains("-->") ||
                 string.IsNullOrWhiteSpace(trimmedLine) ||
-                trimmedLine.All(char.IsDigit))
+                trimmedLine.All(char.IsDigit) ||
+                IsTimestampLine(trimmedLine))
             {
                 continue;
             }
 
             // Remove HTML tags and formatting
-            var cleanLine = System.Text.RegularExpressions.Regex.Replace(trimmedLine, "<[^>]*>", "");
-            cleanLine = System.Text.RegularExpressions.Regex.Replace(cleanLine, @"\&\w+;", "");
+            var cleanLine = Regex.Replace(trimmedLine, "<[^>]*>", "");
+            cleanLine = Regex.Replace(cleanLine, @"&\w+;", "");
             
-            if (!string.IsNullOrWhiteSpace(cleanLine))
+            // Remove common VTT artifacts
+            cleanLine = Regex.Replace(cleanLine, @"^\d+$", ""); // Pure number lines
+            cleanLine = Regex.Replace(cleanLine, @"^-+$", ""); // Dash lines
+            cleanLine = cleanLine.Trim();
+            
+            if (!string.IsNullOrWhiteSpace(cleanLine) && !IsCommonNoiseText(cleanLine))
             {
                 textLines.Add(cleanLine);
             }
         }
 
-        return string.Join(" ", textLines);
+        // Join with a space, but also consider language-specific punctuation
+        var joinedText = string.Join(" ", textLines);
+
+        // Further clean-up for Korean to handle special cases
+        if (language.StartsWith("ko", StringComparison.OrdinalIgnoreCase))
+        {
+            // Remove standalone Korean punctuation marks
+            joinedText = Regex.Replace(joinedText, @"\s*[.,!?]+\s*", " "); // Common sentence-end punctuation
+            joinedText = Regex.Replace(joinedText, @"\s*[-–—]\s*", " "); // Dashes
+            joinedText = Regex.Replace(joinedText, @"^\s+|\s+$", ""); // Trim spaces around
+        }
+
+        return joinedText;
+    }
+
+    /// <summary>
+    /// Validates if subtitle content contains meaningful text for the specified language
+    /// </summary>
+    private static bool IsValidSubtitleContent(string content, string language)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return false;
+
+        // Basic length check - subtitle should have minimum meaningful content
+        if (content.Length < 20)
+            return false;
+
+        // Count meaningful words (not just whitespace and punctuation)
+        var words = content.Split(new char[] { ' ', '\t', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries)
+                          .Where(word => !string.IsNullOrWhiteSpace(word) && 
+                                       !Regex.IsMatch(word, @"^[^\w]+$")) // Not just punctuation
+                          .ToArray();
+
+        if (words.Length < 5) // Minimum word count
+            return false;
+
+        // Language-specific validation
+        if (language.StartsWith("ko", StringComparison.OrdinalIgnoreCase))
+        {
+            return ValidateKoreanContent(content, words);
+        }
+        else if (language.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+        {
+            return ValidateEnglishContent(content, words);
+        }
+
+        // General validation for other languages
+        return ValidateGeneralContent(content, words);
+    }
+
+    /// <summary>
+    /// Validates Korean subtitle content
+    /// </summary>
+    private static bool ValidateKoreanContent(string content, string[] words)
+    {
+        // Check for Korean characters (Hangul)
+        var koreanCharCount = content.Count(c => c >= 0xAC00 && c <= 0xD7AF);
+        var totalCharCount = content.Count(char.IsLetter);
+        
+        // Should have reasonable amount of Korean characters
+        if (totalCharCount > 0 && koreanCharCount / (double)totalCharCount < 0.3)
+        {
+            Console.WriteLine($"⚠️ 한국어 자막으로 기대했지만 한글 비율이 낮습니다. ({koreanCharCount}/{totalCharCount})");
+            return false;
+        }
+
+        // Check for common Korean subtitle artifacts or placeholders
+        var lowerContent = content.ToLower();
+        var commonNoisePatterns = new[]
+        {
+            "자막이 없습니다", "subtitle not available", "no captions", 
+            "자동 생성", "auto-generated", "음성 인식", 
+            "번역 불가", "translation unavailable"
+        };
+
+        if (commonNoisePatterns.Any(pattern => lowerContent.Contains(pattern)))
+        {
+            Console.WriteLine($"⚠️ 한국어 자막에 자막 없음을 나타내는 텍스트가 발견되었습니다.");
+            return false;
+        }
+
+        return koreanCharCount > 10; // At least 10 Korean characters
+    }
+
+    /// <summary>
+    /// Validates English subtitle content
+    /// </summary>
+    private static bool ValidateEnglishContent(string content, string[] words)
+    {
+        // Check for reasonable English word patterns
+        var englishWordCount = words.Count(word => Regex.IsMatch(word, @"^[a-zA-Z]+$"));
+        
+        if (englishWordCount < words.Length * 0.5)
+        {
+            Console.WriteLine($"⚠️ 영어 자막으로 기대했지만 영어 단어 비율이 낮습니다. ({englishWordCount}/{words.Length})");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// General content validation for other languages
+    /// </summary>
+    private static bool ValidateGeneralContent(string content, string[] words)
+    {
+        // Basic checks for any language
+        var averageWordLength = words.Average(w => w.Length);
+        
+        // Words that are too short or too long might indicate noise
+        if (averageWordLength < 2 || averageWordLength > 20)
+        {
+            Console.WriteLine($"⚠️ 자막 내용의 평균 단어 길이가 비정상적입니다. ({averageWordLength:F1})");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Checks if a line contains timestamp information
+    /// </summary>
+    private static bool IsTimestampLine(string line)
+    {
+        // VTT timestamp format: 00:00:00.000 --> 00:00:03.000
+        return Regex.IsMatch(line, @"\d{2}:\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}:\d{2}\.\d{3}") ||
+               Regex.IsMatch(line, @"\d{2}:\d{2}\.\d{3}\s*-->\s*\d{2}:\d{2}\.\d{3}");
+    }
+
+    /// <summary>
+    /// Checks if text is common noise/placeholder text
+    /// </summary>
+    private static bool IsCommonNoiseText(string text)
+    {
+        var lowerText = text.ToLower().Trim();
+        
+        var noisePatterns = new[]
+        {
+            "[음악]", "[music]", "[applause]", "[박수]",
+            "[웃음]", "[laughter]", "[silence]", "[조용히]",
+            "♪", "♫", "♬", "♩", "♭", "♯",
+            "...", "…", "---", "***"
+        };
+
+        return noisePatterns.Any(pattern => lowerText.Contains(pattern.ToLower())) ||
+               lowerText.Length <= 2 ||
+               Regex.IsMatch(lowerText, @"^\[.*\]$"); // Text enclosed in brackets
     }
 
     /// <summary>
