@@ -18,16 +18,31 @@ SumTube는 YouTube 영상의 자막/스크립트를 추출하고 Ollama의 AI �
 
 ## 🚀 사용법
 
-### 기본 사용법SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID"
-### 커스텀 모델 사용SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID" --model "llama3.1:8b"
-### 디버그 모드SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID" --debug
-### 모든 옵션 조합SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID" --model "gemma2:9b" --debug
-### 단축 옵션SumTube.exe -u "https://www.youtube.com/watch?v=VIDEO_ID" -m "gemma2:9b" -d
-### 배치 파일 사용# 기본 모델로 실행
-SumTube.bat "https://www.youtube.com/watch?v=VIDEO_ID"
+### 기본 사용법
+```bash
+SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID"
+```
 
-# 커스텀 모델로 실행
-SumTube.bat "https://www.youtube.com/watch?v=VIDEO_ID" "llama3.1:8b"
+### 커스텀 모델 사용
+```bash
+SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID" --model "llama3.1:8b"
+```
+
+### 디버그 모드
+```bash
+SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID" --debug
+```
+
+### 모든 옵션 조합
+```bash
+SumTube.exe --url "https://www.youtube.com/watch?v=VIDEO_ID" --model "gemma2:9b" --debug
+```
+
+### 단축 옵션
+```bash
+SumTube.exe -u "https://www.youtube.com/watch?v=VIDEO_ID" -m "gemma2:9b" -d
+```
+
 ### 명령줄 옵션
 
 | 옵션 | 단축 | 설명 | 필수 |
@@ -48,7 +63,10 @@ SumTube.bat "https://www.youtube.com/watch?v=VIDEO_ID" "llama3.1:8b"
 
 디버그 모드를 활성화하면 상세한 내부 작업 로그를 확인할 수 있습니다.
 
-### 디버그 모드 활성화SumTube.exe --url "URL" --debug
+### 디버그 모드 활성화
+```bash
+SumTube.exe --url "URL" --debug
+```
 ### 디버그 로그 정보
 - **타임스탬프**: 각 작업의 정확한 시간
 - **카테고리별 로그**: STARTUP, RUNTIME, OLLAMA, MODEL, API, YOUTUBE, AI 등
@@ -58,7 +76,9 @@ SumTube.bat "https://www.youtube.com/watch?v=VIDEO_ID" "llama3.1:8b"
 - **파일 I/O**: 파일 읽기/쓰기 작업 추적
 - **설정 정보**: 로딩된 구성 설정 (민감한 정보 마스킹)
 
-### 디버그 로그 예시🐛 [14:23:45.123] [STARTUP] Command line arguments parsed successfully
+### 디버그 로그 예시
+```
+🐛 [14:23:45.123] [STARTUP] Command line arguments parsed successfully
 🐛 [14:23:45.125] [STARTUP] Arguments: --url https://youtube.com/watch?v=abc123 --debug
 🐛 [14:23:45.127] [RUNTIME] Initializing runtime setup service
 🐛 [14:23:45.890] [OLLAMA] Starting Ollama process from path: C:\SumTube\runtime\ollama\ollama.exe
@@ -67,6 +87,7 @@ SumTube.bat "https://www.youtube.com/watch?v=VIDEO_ID" "llama3.1:8b"
 🐛 [14:23:47.567] [YOUTUBE] Starting transcript extraction for URL: https://youtube.com/watch?v=abc123
 🐛 [14:23:52.123] [AI] Starting AI summary generation
 🐛 [14:24:15.789] [PERF] AI Summary Generation: 23666ms
+```
 ### 디버그 모드 사용 시나리오
 1. **문제 진단**: 오류 발생 시 상세한 로그로 원인 파악
 2. **성능 분석**: 각 단계별 소요 시간 확인
@@ -75,9 +96,10 @@ SumTube.bat "https://www.youtube.com/watch?v=VIDEO_ID" "llama3.1:8b"
 
 ## 📁 디렉토리 구조
 
-프로그램 실행 후 다음과 같은 구조가 생성됩니다:SumTube/
+프로그램 실행 후 다음과 같은 구조가 생성됩니다:
+```
+SumTube/
 ├── SumTube.exe
-├── SumTube.bat                # 간편 실행 스크립트
 ├── appsettings.json           # 설정 파일 (사용자 커스터마이징 가능)
 ├── runtime/                   # 포터블 런타임 환경
 │   ├── python/               # 임베디드 Python 환경
@@ -91,6 +113,8 @@ SumTube.bat "https://www.youtube.com/watch?v=VIDEO_ID" "llama3.1:8b"
 │   │       └── [다운로드된 모델들]
 │   └── versions.json         # 버전 정보 캐시
 └── ...
+```
+
 ## 🔐 고급 모델 검증 시스템
 
 SumTube는 AI 모델의 신뢰성을 보장하기 위해 다단계 검증 시스템을 사용합니다:
@@ -101,7 +125,9 @@ SumTube는 AI 모델의 신뢰성을 보장하기 위해 다단계 검증 시스
 3. **🧪 기능 테스트**: 실제 프롬프트를 통한 응답 생성 테스트
 4. **🔄 자동 복구**: 검증 실패 시 모델 재다운로드
 
-### 검증 결과 표시:🔍 exaone3.5:7.8b 모델을 확인하고 있습니다...
+### 검증 결과 표시:
+```
+🔍 exaone3.5:7.8b 모델을 확인하고 있습니다...
 🔐 exaone3.5:7.8b 모델 무결성을 검증하고 있습니다...
 🧪 exaone3.5:7.8b 모델 기능을 테스트하고 있습니다...
 ✅ exaone3.5:7.8b 모델이 검증되었습니다. (소요시간: 2.3초)
@@ -110,17 +136,25 @@ SumTube는 AI 모델의 신뢰성을 보장하기 위해 다단계 검증 시스
    • 모델명: exaone3.5:7.8b
    • 검증 시간: 2.3초
    • 모델 정보: exaone (7.8B)
-### 자동 복구 과정:⚠️ exaone3.5:7.8b 모델 무결성 검증 실패. 재다운로드합니다...
+```
+### 자동 복구 과정:
+```
+⚠️ exaone3.5:7.8b 모델 무결성 검증 실패. 재다운로드합니다...
 🗑️ 손상된 exaone3.5:7.8b 모델을 제거하고 있습니다...
 ✅ exaone3.5:7.8b 모델이 제거되었습니다.
 📥 exaone3.5:7.8b 모델을 다운로드하고 있습니다...
 [████████████████████] 100% | 4.3 GB/4.3 GB | 2.1 MB/s | ETA: 00:00
 ✅ exaone3.5:7.8b 모델이 재다운로드 후 검증되었습니다.
+```
 ## 🎯 향상된 다운로드 진행률
 
-SumTube는 대용량 파일 다운로드 시 다음과 같은 상세한 진행률을 표시합니다:📥 Python 임베디드 패키지 다운로드를 시작합니다...
+SumTube는 대용량 파일 다운로드 시 다음과 같은 상세한 진행률을 표시합니다:
+
+```
+📥 Python 임베디드 패키지 다운로드를 시작합니다...
 [████████████████████] 100% | 24.1 MB/24.1 MB | 1.2 MB/s | ETA: 00:00
 ✅ Python 임베디드 패키지 다운로드 완료 (1.1 MB/s 평균 속도)
+```
 ### 진행률 표시 정보:
 - **시각적 진행바**: 현재 진행 상황을 한눈에 파악
 - **퍼센티지**: 정확한 완료율 표시
@@ -133,7 +167,9 @@ SumTube는 대용량 파일 다운로드 시 다음과 같은 상세한 진행�
 
 SumTube는 `appsettings.json` 파일을 통해 모든 설정을 커스터마이징할 수 있습니다:
 
-### AI 모델 설정{
+### AI 모델 설정
+```json
+{
   "Ollama": {
     "Port": 11435,
     "DefaultModel": "exaone3.5:7.8b",
@@ -152,24 +188,34 @@ SumTube는 `appsettings.json` 파일을 통해 모든 설정을 커스터마이�
     }
   }
 }
-### 다운로드 URL 설정{
+```
+### 다운로드 URL 설정
+```json
+{
   "Downloads": {
     "PythonEmbeddedUrl": "https://www.python.org/ftp/python/3.12.0/python-3.12.0-embed-amd64.zip",
     "OllamaUrl": "https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip"
   }
 }
-### 업데이트 설정{
+```
+### 업데이트 설정
+```json
+{
   "Updates": {
     "CheckIntervalHours": 24,
     "RetryAttempts": 3
   }
 }
-### YouTube 처리 설정{
+```
+### YouTube 처리 설정
+```json
+{
   "YouTube": {
     "SubtitleLanguagePriority": ["ko", "en", "en.*"],
     "MaxTranscriptLength": 15000
   }
 }
+```
 ## 🔧 시스템 요구사항
 
 - **운영체제**: Windows 10/11 (64-bit)
@@ -194,7 +240,10 @@ SumTube는 `appsettings.json` 파일을 통해 모든 설정을 커스터마이�
 
 ## 📋 요약 결과 형식
 
-SumTube가 생성하는 요약은 다음과 같은 구조를 가집니다:## 📌 영상 요약
+SumTube가 생성하는 요약은 다음과 같은 구조를 가집니다:
+
+```markdown
+## 📌 영상 요약
 
 ### 🎯 핵심 주제
 [영상의 주요 주제와 목적]
@@ -207,20 +256,37 @@ SumTube가 생성하는 요약은 다음과 같은 구조를 가집니다:## �
 
 ### 🎯 결론 및 시사점
 [영상의 결론과 인사이트]
+```
 ## 🛠️ 문제 해결
 
-### 자막을 찾을 수 없는 경우⚠️ 자막을 찾을 수 없습니다.- 해당 영상에 자막이 없거나 비공개 상태일 수 있습니다
+### 자막을 찾을 수 없는 경우
+```
+⚠️ 자막을 찾을 수 없습니다.
+```
+- 해당 영상에 자막이 없거나 비공개 상태일 수 있습니다
 - 다른 영상을 시도해보세요
 
-### Ollama 연결 실패❌ Ollama 서버에 연결할 수 없습니다.- 방화벽에서 설정된 포트를 허용하세요 (기본: 11435)
+### Ollama 연결 실패
+```
+❌ Ollama 서버에 연결할 수 없습니다.
+```
+- 방화벽에서 설정된 포트를 허용하세요 (기본: 11435)
 - 프로그램을 관리자 권한으로 실행해보세요
 - **디버그 모드로 실행**하여 상세한 연결 과정을 확인하세요
 
-### 모델 다운로드 실패❌ 모델 다운로드에 실패했습니다.- 인터넷 연결을 확인하세요
+### 모델 다운로드 실패
+```
+❌ 모델 다운로드에 실패했습니다.
+```
+- 인터넷 연결을 확인하세요
 - 디스크 공간이 충분한지 확인하세요 (최소 5GB)
 - **디버그 모드로 실행**하여 다운로드 과정을 추적하세요
 
-### 모델 검증 실패❌ 모델 검증 실패: 모델이 손상되었습니다.- 프로그램이 자동으로 모델을 재다운로드합니다
+### 모델 검증 실패
+```
+❌ 모델 검증 실패: 모델이 손상되었습니다.
+```
+- 프로그램이 자동으로 모델을 재다운로드합니다
 - 네트워크가 안정적인지 확인하세요
 - 디스크 공간이 충분한지 확인하세요
 - **디버그 모드로 실행**하여 검증 과정의 상세 정보를 확인하세요
@@ -232,7 +298,11 @@ SumTube가 생성하는 요약은 다음과 같은 구조를 가집니다:## �
 - **디버그 모드로 실행**하여 네트워크 상태를 모니터링하세요
 
 ### 디버그 모드 활용
-문제가 발생했을 때 디버그 모드를 사용하면:SumTube.exe --url "YOUR_URL" --debug- 상세한 오류 정보 확인
+문제가 발생했을 때 디버그 모드를 사용하면:
+```bash
+SumTube.exe --url "YOUR_URL" --debug
+```
+- 상세한 오류 정보 확인
 - 각 단계별 진행 상황 추적
 - 성능 병목 지점 파악
 - API 호출 및 응답 상태 확인
@@ -248,13 +318,18 @@ SumTube는 설정에 따라 자동으로 업데이트를 확인합니다:
 ## 🎮 고급 설정
 
 ### 커스텀 AI 모델 사용
-명령줄에서 직접 지정하거나 `appsettings.json`에서 변경:{
+명령줄에서 직접 지정하거나 `appsettings.json`에서 변경:
+```json
+{
   "Ollama": {
     "DefaultModel": "llama3.1:8b"
   }
 }
+```
 ### 모델 검증 설정
-검증 기능을 세밀하게 제어할 수 있습니다:{
+검증 기능을 세밀하게 제어할 수 있습니다:
+```json
+{
   "Ollama": {
     "ModelValidation": {
       "EnableIntegrityCheck": false,
@@ -265,24 +340,36 @@ SumTube는 설정에 따라 자동으로 업데이트를 확인합니다:
     }
   }
 }
+```
 ### 커스텀 포트
-기본 포트 충돌 시 변경 가능:{
+기본 포트 충돌 시 변경 가능:
+```json
+{
   "Ollama": {
     "Port": 11436
   }
 }
+```
+
 ### 자막 언어 우선순위
-선호하는 언어 순서 설정:{
+선호하는 언어 순서 설정:
+```json
+{
   "YouTube": {
     "SubtitleLanguagePriority": ["en", "ko", "ja"]
   }
 }
-### 다운로드 성능 튜닝{
+```
+
+### 다운로드 성능 튜닝
+```json
+{
   "Runtime": {
     "BufferSize": 16384,
     "MaxDownloadRetries": 5
   }
 }
+```
 ## 📞 지원
 
 문제가 발생하면 다음을 확인하세요:
