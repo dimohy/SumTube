@@ -392,9 +392,6 @@ SumTube는 설정에 따라 자동으로 업데이트를 확인합니다:
 - **yt-dlp**: YouTube 영상 다운로드 및 정보 추출
 - **Ollama**: 로컬 AI 모델 실행 환경
 - **LG AI Research**: exaone3.5 모델 개발
-- **Meta**: Llama 모델 개발
-- **Google**: Gemma 모델 개발
-- **Microsoft**: .NET 10 플랫폼
 
 ---
 
